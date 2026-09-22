@@ -4,42 +4,29 @@ from io import BytesIO
 from fpdf import FPDF
 import streamlit.components.v1 as components
 
+# --- REGOLE CSS PER LA STAMPA PULITA ---
+st.markdown("""
+    <style>
+    @media print {
+        [data-testid="stSidebar"] { display: none !important; }
+        header { display: none !important; }
+        [data-testid="stForm"] { display: none !important; }
+        .block-container { padding-top: 1rem !important; max-width: 100% !important; }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- 1. INIZIALIZZAZIONE DATI ---
 if 'materiali' not in st.session_state:
     st.session_state.materiali = [
-        {"nome": "PC per concorsi completo", "procurato": False, "posizione": ""},
-        {"nome": "Monitor completo", "procurato": True, "posizione": "Ufficio"}
+        {"nome": "Cavi di rete 15m", "quantita": 2, "procurato": False, "posizione": ""},
+        {"nome": "Switch 8 porte", "quantita": 1, "procurato": True, "posizione": "Ufficio"}
     ]
 if 'riga_in_modifica' not in st.session_state:
     st.session_state.riga_in_modifica = None
 
 st.title("📦 Logistica Materiali")
 st.write("Gestisci l'attrezzatura per il tuo lavoro.")
-
-# --- REGOLE CSS PER LA STAMPA PULITA ---
-st.markdown("""
-    <style>
-    @media print {
-        /* Nasconde la barra laterale */
-        [data-testid="stSidebar"] {
-            display: none !important;
-        }
-        /* Nasconde l'intestazione superiore (menu a tre puntini) */
-        header {
-            display: none !important;
-        }
-        /* Nasconde il riquadro per aggiungere nuovi materiali */
-        [data-testid="stForm"] {
-            display: none !important;
-        }
-        /* Allarga la lista per occupare bene il foglio A4 */
-        .block-container {
-            padding-top: 1rem !important;
-            max-width: 100% !important;
-        }
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 # --- 2. BARRA LATERALE: IMPORTA, ESPORTA E STAMPA ---
 st.sidebar.title("⚙️ Azioni")
@@ -59,23 +46,28 @@ if file_caricato is not None:
             conteggio = 0
             for index, row in df_in.iterrows():
                 nome_mat = ""
-                # Se il file è stato esportato da questa app, avrà queste colonne
                 if 'Nome Materiale' in df_in.columns:
                     nome_mat = str(row['Nome Materiale'])
                 elif len(df_in.columns) > 0:
-                    # Altrimenti prende la primissima colonna del tuo Excel
                     nome_mat = str(row.iloc[0])
                 
-                # Evitiamo di importare righe vuote
                 if nome_mat and nome_mat.lower() != 'nan':
-                    # Recupera lo stato "Procurato" se esiste
+                    # Recupero Quantità
+                    qta_val = 1
+                    if 'Quantità' in df_in.columns:
+                        try:
+                            qta_val = int(row['Quantità'])
+                        except:
+                            qta_val = 1
+
+                    # Recupero Stato
                     procurato_val = False
                     if 'Procurato?' in df_in.columns:
                         val_proc = str(row['Procurato?']).lower().strip()
                         if val_proc in ['sì', 'si', 'true', '1', 'yes']:
                             procurato_val = True
                     
-                    # Recupera la "Posizione" se esiste
+                    # Recupero Posizione
                     posizione_val = ""
                     if 'Posizione' in df_in.columns:
                         val_pos = str(row['Posizione']).strip()
@@ -84,6 +76,7 @@ if file_caricato is not None:
                     
                     st.session_state.materiali.append({
                         "nome": nome_mat,
+                        "quantita": qta_val,
                         "procurato": procurato_val,
                         "posizione": posizione_val
                     })
@@ -102,7 +95,9 @@ df = pd.DataFrame(st.session_state.materiali)
 if not df.empty:
     df_export = df.copy()
     df_export['procurato'] = df_export['procurato'].map({True: 'Sì', False: 'No'})
-    df_export.columns = ['Nome Materiale', 'Procurato?', 'Posizione']
+    # Riordiniamo le colonne per inserire la quantità
+    df_export = df_export[['nome', 'quantita', 'procurato', 'posizione']]
+    df_export.columns = ['Nome Materiale', 'Quantità', 'Procurato?', 'Posizione']
     
     # EXCEL
     output_excel = BytesIO()
@@ -128,7 +123,8 @@ if not df.empty:
     for item in st.session_state.materiali:
         stato = "Procurato" if item['procurato'] else "Da trovare"
         pos = item['posizione'] if item['posizione'] else "---"
-        riga = f"- {item['nome']}  |  Stato: {stato}  |  Posizione: {pos}"
+        qta = item.get('quantita', 1)
+        riga = f"- {qta}x {item['nome']}  |  Stato: {stato}  |  Posizione: {pos}"
         pdf.cell(0, 10, riga, new_x="LMARGIN", new_y="NEXT")
         
     pdf_bytes = bytes(pdf.output()) 
@@ -155,19 +151,26 @@ components.html(
     height=50
 )
 
-
 # --- 3. INSERIMENTO MANUALE MATERIALI ---
 st.subheader("Aggiungi nuovo materiale")
 with st.form("form_inserimento", clear_on_submit=True):
-    col_input, col_btn = st.columns([4, 1])
+    # Aggiunta la colonna per la quantità nel form
+    col_input, col_qta, col_btn = st.columns([3, 1, 1])
     with col_input:
         nuovo_nome = st.text_input("Cosa devi portare?", label_visibility="collapsed", placeholder="Es. Trapano a batteria...")
+    with col_qta:
+        nuova_qta = st.number_input("Q.tà", min_value=1, value=1, label_visibility="collapsed")
     with col_btn:
         inviato = st.form_submit_button("Aggiungi ➕")
     
     if inviato and nuovo_nome:
-        st.session_state.materiali.append({"nome": nuovo_nome, "procurato": False, "posizione": ""})
-        st.success(f"Aggiunto: {nuovo_nome}")
+        st.session_state.materiali.append({
+            "nome": nuovo_nome, 
+            "quantita": nuova_qta, 
+            "procurato": False, 
+            "posizione": ""
+        })
+        st.success(f"Aggiunto: {nuova_qta}x {nuovo_nome}")
         st.rerun()
 
 # --- 4. LISTA MATERIALI ---
@@ -178,27 +181,37 @@ indice_da_eliminare = None
 indice_da_modificare = None
 indice_da_salvare = None
 nuovo_nome_modificato = ""
+nuova_quantita_modificata = 1
 
 for i, item in enumerate(st.session_state.materiali):
-    col1, col2, col3, col4 = st.columns([3, 2, 1, 1])
+    # Suddiviso l'elenco in 5 colonne per far spazio alla quantità
+    col1, col_qta, col2, col3, col4 = st.columns([3, 1, 2, 1, 1])
+    
+    qta_attuale = item.get('quantita', 1) # Fallback a 1 se ci sono vecchi dati senza quantità
     
     if st.session_state.riga_in_modifica == i:
         with col1:
             nuovo_testo = st.text_input("Modifica", value=item['nome'], key=f"edit_in_{i}", label_visibility="collapsed")
+        with col_qta:
+            nuova_qta_input = st.number_input("Q.tà", min_value=1, value=qta_attuale, key=f"edit_qta_{i}", label_visibility="collapsed")
         with col2:
             st.write("*(In modifica...)*")
         with col3:
-            if st.button("💾 Salva", key=f"save_{i}"):
+            if st.button("💾", key=f"save_{i}", help="Salva"):
                 indice_da_salvare = i
                 nuovo_nome_modificato = nuovo_testo
+                nuova_quantita_modificata = nuova_qta_input
         with col4:
-            if st.button("❌", key=f"cancel_{i}"):
+            if st.button("❌", key=f"cancel_{i}", help="Annulla"):
                 st.session_state.riga_in_modifica = None
                 st.rerun()
     else:
         with col1:
             procurato = st.checkbox(item['nome'], value=item['procurato'], key=f"check_{i}")
             st.session_state.materiali[i]['procurato'] = procurato
+            
+        with col_qta:
+            st.write(f"**{qta_attuale} pz**")
             
         with col2:
             if procurato:
@@ -226,6 +239,7 @@ if indice_da_modificare is not None:
 
 if indice_da_salvare is not None:
     st.session_state.materiali[indice_da_salvare]['nome'] = nuovo_nome_modificato
+    st.session_state.materiali[indice_da_salvare]['quantita'] = nuova_quantita_modificata
     st.session_state.riga_in_modifica = None
     st.rerun()
     
