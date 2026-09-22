@@ -19,8 +19,7 @@ st.markdown("""
 # --- 1. INIZIALIZZAZIONE DATI ---
 if 'materiali' not in st.session_state:
     st.session_state.materiali = [
-        {"nome": "Cavi di rete 15m", "quantita": 2, "procurato": False, "posizione": ""},
-        {"nome": "Switch 8 porte", "quantita": 1, "procurato": True, "posizione": "Ufficio"}
+
     ]
 if 'riga_in_modifica' not in st.session_state:
     st.session_state.riga_in_modifica = None
