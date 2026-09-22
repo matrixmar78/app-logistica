@@ -7,14 +7,39 @@ import streamlit.components.v1 as components
 # --- 1. INIZIALIZZAZIONE DATI ---
 if 'materiali' not in st.session_state:
     st.session_state.materiali = [
-        {"nome": "Cavi di rete 15m", "procurato": False, "posizione": ""},
-        {"nome": "Switch 8 porte", "procurato": True, "posizione": "Ufficio"}
+        {"nome": "PC per concorsi completo", "procurato": False, "posizione": ""},
+        {"nome": "Monitor completo", "procurato": True, "posizione": "Ufficio"}
     ]
 if 'riga_in_modifica' not in st.session_state:
     st.session_state.riga_in_modifica = None
 
 st.title("📦 Logistica Materiali")
 st.write("Gestisci l'attrezzatura per il tuo lavoro.")
+
+# --- REGOLE CSS PER LA STAMPA PULITA ---
+st.markdown("""
+    <style>
+    @media print {
+        /* Nasconde la barra laterale */
+        [data-testid="stSidebar"] {
+            display: none !important;
+        }
+        /* Nasconde l'intestazione superiore (menu a tre puntini) */
+        header {
+            display: none !important;
+        }
+        /* Nasconde il riquadro per aggiungere nuovi materiali */
+        [data-testid="stForm"] {
+            display: none !important;
+        }
+        /* Allarga la lista per occupare bene il foglio A4 */
+        .block-container {
+            padding-top: 1rem !important;
+            max-width: 100% !important;
+        }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # --- 2. BARRA LATERALE: IMPORTA, ESPORTA E STAMPA ---
 st.sidebar.title("⚙️ Azioni")
