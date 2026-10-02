@@ -23,7 +23,7 @@ if 'riga_in_modifica' not in st.session_state:
     st.session_state.riga_in_modifica = None
 
 # Creiamo 3 colonne e usiamo solo quella centrale per centrare il logo
-col1, col2, col3 = st.columns([0.5, 0.8, 0.8]) 
+col1, col2, col3 = st.columns([0.8, 0.5, 0.8]) 
 
 with col2:
     st.image("logo.png", use_container_width=True) 
