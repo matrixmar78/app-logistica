@@ -28,7 +28,7 @@ if 'riga_in_modifica' not in st.session_state:
 col_logo, col_titolo = st.columns([1, 6]) 
 
 with col_logo:
-    st.image("logo.png", width=360) 
+    st.image("logo.png", width=3600) 
 
 with col_titolo:
     st.title("Logistica Materiali")
