@@ -24,7 +24,14 @@ if 'materiali' not in st.session_state:
 if 'riga_in_modifica' not in st.session_state:
     st.session_state.riga_in_modifica = None
 
-st.title("📦 Logistica Materiali")
+# Sostituisci "logo.png" con il nome esatto del file che hai caricato al Passo 1
+col_logo, col_titolo = st.columns([1, 6]) 
+
+with col_logo:
+    st.image("logo.png", width=60) 
+
+with col_titolo:
+    st.title("Logistica Materiali")
 st.write("Gestisci l'attrezzatura per il tuo lavoro.")
 
 # --- 2. BARRA LATERALE: IMPORTA, ESPORTA E STAMPA ---
