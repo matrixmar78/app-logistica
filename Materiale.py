@@ -18,21 +18,19 @@ st.markdown("""
 
 # --- 1. INIZIALIZZAZIONE DATI ---
 if 'materiali' not in st.session_state:
-    st.session_state.materiali = [
-
-    ]
+    st.session_state.materiali = [ ]
 if 'riga_in_modifica' not in st.session_state:
     st.session_state.riga_in_modifica = None
 
-# Sostituisci "logo.png" con il nome esatto del file che hai caricato al Passo 1
-col_logo, col_titolo = st.columns([1, 6]) 
+# Creiamo 3 colonne e usiamo solo quella centrale per centrare il logo
+col1, col2, col3 = st.columns([1, 1, 1]) 
 
-with col_logo:
-    st.image("logo.png", width=3600) 
+with col2:
+    st.image("logo.png", use_container_width=True) 
 
-with col_titolo:
-    st.title("Logistica Materiali")
-st.write("Gestisci l'attrezzatura per il tuo lavoro.")
+# Usiamo l'HTML per forzare l'allineamento del testo al centro
+st.markdown("<h1 style='text-align: center;'>Logistica Materiali</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Gestisci l'attrezzatura per il tuo lavoro.</p>", unsafe_allow_html=True)
 
 # --- 2. BARRA LATERALE: IMPORTA, ESPORTA E STAMPA ---
 st.sidebar.title("⚙️ Azioni")
